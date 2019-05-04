@@ -244,4 +244,19 @@ async_test(t => {
       closed
         The RTCIceTransport has shut down and is no longer responding to STUN requests.
    */
+  promise_test(async t => {
+    const caller = new RTCPeerConnection();
+    t.add_cleanup(() => caller.close());
+    const callee = new RTCPeerConnection();
+    t.add_cleanup(() => callee.close());
+
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true, video: true});
+    t.add_cleanup(() => stream.getTracks().forEach(track => track.stop()));
+    stream.getTracks().forEach(track => caller.addTrack(track, stream));
+
+    exchangeIceCandidates(caller, callee);
+    await doSignalingHandshake(caller, callee);
+
+    await listenToIceConnected(caller);
+  }, 'connection with media should eventually have connected state');
 </script>
